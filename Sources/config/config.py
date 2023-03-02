@@ -1,0 +1,6 @@
+import os
+
+
+PASSWORD_SALT = os.environ["PASSWORD_SALT"]
+
+POSTGRESQL_CONFIG = os.environ["POSTGRESQL_CONFIG"]
