@@ -1,4 +1,3 @@
-from datetime import datetime
 from sqlalchemy import (
     Float,
     Column,
@@ -9,9 +8,10 @@ from sqlalchemy import (
     BigInteger,
     ForeignKey,
 )
+from datetime import datetime
 from sqlalchemy.orm import relationship, declarative_base
 
-from database import engine
+from db.database import engine
 
 
 Base = declarative_base()
@@ -41,7 +41,7 @@ class Animal(Base):
     chippingLocationId = Column(ForeignKey("location_point.id"), nullable=False)
     deathDateTime = Column(DateTime)
 
-    animalTypes = relationship("AnimalType", secondary="animal_type-animal")
+    animalTypes = relationship("AnimalType", secondary="animalType_animal")
     visitedLocations = relationship("AnimalVisitedLocation")
 
 
@@ -53,7 +53,7 @@ class AnimalType(Base):
 
 
 class AnimalTypeAnimal(Base):
-    __tablename__ = "animal_type-animal"
+    __tablename__ = "animalType_animal"
 
     id_animal = Column(ForeignKey("animal.id"), primary_key=True, index=True)
     id_animal_type = Column(ForeignKey("animal_type.id"), primary_key=True, index=True)
