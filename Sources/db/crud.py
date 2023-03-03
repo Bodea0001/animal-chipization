@@ -69,7 +69,7 @@ def update_account(
             models.Account.password: user_data.password
         },
         synchronize_session=False
-        )
+    )
     db.commit()
 
 
@@ -86,3 +86,80 @@ def is_account_linked_with_animals(
     account_id: int | Column[Integer]
 ) -> bool:
     return db.query(exists().where(models.Animal.chipperId==account_id)).scalar()    
+
+
+# LocationPoint
+def get_location_point(
+    db: Session,
+    point_id: int | Column[Integer]
+) -> models.LocationPoint | None:
+    return db.query(models.LocationPoint).filter(
+        models.LocationPoint.id==point_id
+    ).first()
+
+
+def exists_location_point_with_latitude_and_longitude(
+    db: Session, 
+    location_point: schemas.LocationPointBase
+) -> bool:
+    return db.query(exists().where(
+        models.LocationPoint.latitude == location_point.latitude,
+        models.LocationPoint.longitude == location_point.longitude
+    )).scalar()    
+
+
+def exists_location_point_with_id(db: Session, point_id: int) -> bool:
+    return db.query(exists().where(models.LocationPoint.id == point_id)).scalar()
+
+
+def create_location_point(
+    db: Session,
+    location_point: schemas.LocationPointBase
+) -> models.LocationPoint:
+    db_location_point = models.LocationPoint(
+        latitude = location_point.latitude,
+        longitude = location_point.longitude
+    )
+    db.add(db_location_point)
+    db.commit()
+    db.refresh(db_location_point)
+    return db_location_point
+
+
+def update_location_point(
+    db: Session,
+    point_id: int | Column[Integer],
+    location_point: schemas.LocationPointBase
+):
+    db.query(models.LocationPoint).filter(
+        models.LocationPoint.id == point_id
+    ).update(
+        {
+            models.LocationPoint.latitude: location_point.latitude,
+            models.LocationPoint.longitude: location_point.longitude
+        },
+        synchronize_session=False
+    )
+    db.commit()
+
+
+def is_location_point_linked_with_animals(
+    db: Session,
+    point_id: int | Column[Integer]
+) -> bool:
+    animals_link = db.query(exists().where(
+        models.Animal.chippingLocationId == point_id
+    )).scalar()
+
+    animals_visited_locations_link = db.query(exists().where(
+        models.AnimalVisitedLocation.id_location_point == point_id
+    )).scalar()
+
+    return any((animals_link, animals_visited_locations_link))
+
+
+def delete_location_point(db: Session, point_id: int | Column[Integer]):
+    db.query(models.LocationPoint).filter(
+        models.LocationPoint.id == point_id
+    ).delete()
+    db.commit()
