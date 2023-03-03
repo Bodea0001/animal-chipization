@@ -75,7 +75,8 @@ class AnimalVisitedLocation(Base):
         ForeignKey("location_point.id"),
         primary_key=True, 
         index=True
-    ) 
+    )
+    dateTimeOfVisitLocationPoint = Column(DateTime, default=datetime.utcnow())
 
 
 if __name__ == "__main__":
