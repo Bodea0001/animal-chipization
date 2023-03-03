@@ -1,5 +1,5 @@
-from pydantic import BaseModel, validator
-from fastapi import HTTPException, status
+from pydantic import BaseModel, validator, Field
+from fastapi import HTTPException, status, Query
 
 from controllers.mail import is_email_valid
 
@@ -32,8 +32,18 @@ class AccountRegistration(AccountBase):
         return email
 
 
+class AccountUpdate(AccountRegistration):
+    pass
+
+
 class AccountOut(AccountBase):
     id: int
+
+
+class AccountSearch(AccountBase):
+    firstName: str | None
+    lastName: str | None
+    email: str | None
 
 
 class Account(AccountRegistration, AccountOut):
