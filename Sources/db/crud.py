@@ -163,3 +163,62 @@ def delete_location_point(db: Session, point_id: int | Column[Integer]):
         models.LocationPoint.id == point_id
     ).delete()
     db.commit()
+
+
+# AnimalTypes
+def get_animal_type(
+    db: Session,
+    type_id: int | Column[Integer]
+) -> models.AnimalType | None:
+    return db.query(models.AnimalType).filter(
+        models.AnimalType.id == type_id
+    ).first()
+
+
+def exists_animal_type_with_type(
+    db: Session, 
+    animal_type: schemas.AnimalTypeBase
+) -> bool:
+    return db.query(exists().where(
+        models.AnimalType.type == animal_type.type,
+    )).scalar()    
+
+
+def exists_animal_type_with_id(db: Session, type_id: int) -> bool:
+    return db.query(exists().where(models.AnimalType.id == type_id)).scalar()
+
+
+def create_animal_type(
+    db: Session,
+    animal_type: schemas.AnimalTypeBase
+) -> models.AnimalType:
+    db_animal_type = models.AnimalType(type=animal_type.type)
+    db.add(db_animal_type)
+    db.commit()
+    db.refresh(db_animal_type)
+    return db_animal_type
+
+
+def update_animal_type(
+    db: Session,
+    type_id: int | Column[Integer],
+    animal_type: schemas.AnimalTypeBase
+):
+    db.query(models.AnimalType).filter(models.AnimalType.id==type_id).update(
+        {
+            models.AnimalType.type: animal_type.type
+        },
+        synchronize_session=False
+    )
+    db.commit()
+
+
+def is_animal_type_linked_with_animals(db: Session, type_id: int) -> bool:
+    return db.query(exists().where(
+        models.AnimalTypeAnimal.id_animal_type == type_id
+    )).scalar()
+
+
+def delete_animal_type(db: Session, type_id: int | Column[Integer]):
+    db.query(models.AnimalType).filter(models.AnimalType.id == type_id).delete()
+    db.commit()

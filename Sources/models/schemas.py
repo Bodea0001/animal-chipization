@@ -70,3 +70,18 @@ class LocationPointBase(BaseModel):
 
 class LocationPoint(LocationPointBase):
     id: int
+
+
+# AnimalTypes
+class AnimalTypeBase(BaseModel):
+    type: str
+
+    @validator("type", pre=True, always=True)
+    def validate_type(cls, type):
+        if not type or not type.strip():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        return type
+
+
+class AnimalType(AnimalTypeBase):
+    id: int
