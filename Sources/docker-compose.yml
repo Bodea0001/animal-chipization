@@ -17,8 +17,8 @@ services:
   # Сервис для разворачивания контейнера с приложением
   webapi:
     container_name: webapi
-    build: ../Sources
-    command: bash -c "ls && python3.11 Sources/db/models.py && uvicorn Sources.api.main:app --host 0.0.0.0 --port 8080 --reload"
+    build: .
+    command: bash -c "ls && python3.11 db/models.py && uvicorn main:app --host 0.0.0.0 --port 8080 --reload"
     ports:
       - "8080:8080"
     depends_on:
@@ -28,6 +28,7 @@ services:
     restart: always
     environment:
       - POSTGRESQL_CONFIG=postgresql+psycopg2://user:password@database/animal-chipization
+      - PASSWORD_SALT=${PASSWORD_SALT}
 
   # Сервис для разворачивания контейнера с автотестами
   tests:
