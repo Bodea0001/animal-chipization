@@ -20,3 +20,10 @@ def validate_location_point(
         latitude=location_point.latitude,  # type: ignore
         longitude=location_point.longitude  # type: ignore
     )
+
+
+def validate_animal_type(animal_type: models.AnimalType) -> schemas.AnimalType:
+    return schemas.AnimalType(
+        id=animal_type.id,  # type: ignore
+        type=animal_type.type  # type: ignore
+    )
