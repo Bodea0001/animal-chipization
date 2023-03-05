@@ -59,4 +59,14 @@ def _validate_visited_locations(
         visited_locations, 
         key=lambda loc: loc.dateTimeOfVisitLocationPoint  # type: ignore
     )
-    return [location.id_location_point for location in sorted_visited_locations]  # type: ignore
+    return [location.id for location in sorted_visited_locations]  # type: ignore
+
+
+def validate_visited_location(
+    visited_location: models.AnimalVisitedLocation
+) -> schemas.AnimalVisitedLocationOut:
+    return schemas.AnimalVisitedLocationOut(
+        id=visited_location.id,  # type: ignore
+        dateTimeOfVisitLocationPoint=visited_location.dateTimeOfVisitLocationPoint,  # type: ignore
+        locationPointId=visited_location.locationPointId  # type: ignore
+    )
