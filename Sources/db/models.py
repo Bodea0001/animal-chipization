@@ -47,7 +47,10 @@ class Animal(Base):
     deathDateTime = Column(DateTime(timezone=True))
 
     animalTypes = relationship("AnimalType", secondary="animalType_animal")
-    visitedLocations = relationship("AnimalVisitedLocation")
+    visitedLocations = relationship(
+        "AnimalVisitedLocation",
+        order_by="AnimalVisitedLocation.dateTimeOfVisitLocationPoint"
+    )
 
 
 class AnimalType(Base):
@@ -79,17 +82,15 @@ class LocationPoint(Base):
 class AnimalVisitedLocation(Base):
     __tablename__ = "animal_visited_location"
     
-    id_animal = Column(ForeignKey("animal.id"), primary_key=True, index=True)
-    id_location_point = Column(
-        ForeignKey("location_point.id"),
-        primary_key=True, 
-        index=True
-    )
+    id = Column(BigInteger, primary_key=True, index=True)
+    id_animal = Column(ForeignKey("animal.id", ondelete="CASCADE"), nullable=False)
+    locationPointId = Column(ForeignKey("location_point.id"), nullable=False)
     dateTimeOfVisitLocationPoint = Column(
         DateTime(timezone=True),
         default=datetime.now(tz=pytz.UTC).replace(microsecond=0),
         nullable=False
         )
+
 
 if __name__ == "__main__":
     Base.metadata.create_all(engine)
