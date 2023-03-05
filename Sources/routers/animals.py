@@ -109,9 +109,9 @@ async def update_animal_information(
     if (update_data.lifeStatus == schemas.LifeStatus.ALIVE and
         animal.lifeStatus == schemas.LifeStatus.DEAD):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
-
+    
     if (animal.visitedLocations and 
-        update_data.chipperId == animal.visitedLocations[0]):
+        update_data.chippingLocationId == animal.visitedLocations[0].locationPointId):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
 
     if not exists_account_with_id(db, update_data.chipperId):
@@ -144,9 +144,8 @@ async def delete_animal_information(
     if not animal:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     
-    valid_animal = validate_animal(animal)
-    if (valid_animal.visitedLocations and
-        valid_animal.chippingLocationId !=valid_animal.visitedLocations[-1]):
+    if (animal.visitedLocations and
+        animal.chippingLocationId != animal.visitedLocations[-1].locationPointId):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
 
     delete_animal(db, animalId)
