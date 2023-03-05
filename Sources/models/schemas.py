@@ -136,7 +136,7 @@ class AnimalUpdate(AnimalBase):
 
     def __init__(self, **data):
         if data.get('lifeStatus') == LifeStatus.DEAD:
-            self.deathDateTime = datetime.now(tz=pytz.UTC).replace(microsecond=0)
+            data['deathDateTime'] = datetime.now(tz=pytz.UTC).replace(microsecond=0)
         super().__init__(**data)
 
 
@@ -161,3 +161,20 @@ class Animal(AnimalBase, AnimalTypes):
     visitedLocations: list[int]
     deathDateTime: datetime | None
 
+
+# AnimalVisitedLocation -------------------------------------------------------
+class AnimalVisitedLocationSearch(BaseModel):
+    startDateTime: datetime | None
+    endDateTime: datetime | None
+
+
+class AnimalVisitedLocationOut(BaseModel):
+    id: int
+    dateTimeOfVisitLocationPoint: datetime
+    locationPointId: int
+
+
+class AnimalVisitedLocationChange(BaseModel):
+    visitedLocationPointId: int = Field(gt=0)
+    locationPointId: int = Field(gt=0)
+    

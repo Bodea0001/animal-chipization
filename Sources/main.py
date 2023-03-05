@@ -8,6 +8,7 @@ from routers import accounts
 from routers import locations
 from routers import animal_types
 from routers import animals
+from routers import visited_locations
 
 
 app = FastAPI()
@@ -26,3 +27,4 @@ app.include_router(accounts.router)
 app.include_router(locations.router)
 app.include_router(animal_types.router)
 app.include_router(animals.router)
+app.include_router(visited_locations.router)

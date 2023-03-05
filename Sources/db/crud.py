@@ -152,7 +152,7 @@ def is_location_point_linked_with_animals(
     )).scalar()
 
     animals_visited_locations_link = db.query(exists().where(
-        models.AnimalVisitedLocation.id_location_point == point_id
+        models.AnimalVisitedLocation.locationPointId == point_id
     )).scalar()
 
     return any((animals_link, animals_visited_locations_link))
@@ -356,5 +356,72 @@ def delete_animal_type_of_animal(
     db.query(models.AnimalTypeAnimal).filter(
         models.AnimalTypeAnimal.id_animal == animal_id,
         models.AnimalTypeAnimal.id_animal_type == type_id,
+    ).delete()
+    db.commit()
+
+
+def get_visited_locastions(
+    db: Session,
+    animal_id: int,
+    data: schemas.AnimalVisitedLocationSearch,
+    skip: int,
+    size: int
+) -> list[models.AnimalVisitedLocation] | list[None]:
+    datetime_comprasion = []
+    if data.startDateTime:
+        datetime_comprasion.append(
+            models.AnimalVisitedLocation.dateTimeOfVisitLocationPoint >= data.startDateTime
+        )
+    if data.endDateTime:
+        datetime_comprasion.append(
+            models.AnimalVisitedLocation.dateTimeOfVisitLocationPoint <= data.endDateTime
+        )
+    return db.query(models.AnimalVisitedLocation).filter(
+        models.AnimalVisitedLocation.id_animal == animal_id,
+        and_(*datetime_comprasion),
+    ).order_by(
+        models.AnimalVisitedLocation.dateTimeOfVisitLocationPoint
+    ).offset(skip).limit(size).all()
+
+
+def create_animal_visited_location(
+    db: Session,
+    animal_id: int | Column[int],
+    point_id: int | Column[int]
+) -> models.AnimalVisitedLocation:
+    db_visited_location = models.AnimalVisitedLocation(
+        id_animal = animal_id,
+        locationPointId = point_id,
+    )
+    db.add(db_visited_location)
+    db.commit()
+    db.refresh(db_visited_location)
+    return db_visited_location
+
+
+def get_visited_location(
+    db: Session, 
+    loc_id: int | Column[int],
+) -> models.AnimalVisitedLocation | None:
+    return db.query(models.AnimalVisitedLocation).filter(
+        models.AnimalVisitedLocation.id == loc_id,
+    ).first()
+
+
+def update_visited_location(db: Session, data: schemas.AnimalVisitedLocationChange):
+    db.query(models.AnimalVisitedLocation).filter(
+        models.AnimalVisitedLocation.id == data.visitedLocationPointId
+    ).update(
+        {
+            models.AnimalVisitedLocation.locationPointId: data.locationPointId,
+        },
+        synchronize_session=False
+    )
+    db.commit()
+
+
+def delete_visited_location(db: Session, loc_id: int | Column[int]):
+    db.query(models.AnimalVisitedLocation).filter(
+        models.AnimalVisitedLocation.id == loc_id
     ).delete()
     db.commit()
