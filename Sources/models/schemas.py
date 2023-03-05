@@ -1,10 +1,13 @@
+import pytz
+from enum import Enum
+from datetime import datetime
 from pydantic import BaseModel, validator, Field
-from fastapi import HTTPException, status, Query
+from fastapi import HTTPException, status
 
 from controllers.mail import is_email_valid
 
 
-# Account
+# Account ---------------------------------------------------------------------
 class AccountBase(BaseModel):
     firstName: str
     lastName: str
@@ -50,7 +53,7 @@ class Account(AccountRegistration, AccountOut):
     pass
 
 
-#LocationPoint
+#LocationPoint ----------------------------------------------------------------
 class LocationPointBase(BaseModel):
     latitude: float
     longitude: float
@@ -72,7 +75,7 @@ class LocationPoint(LocationPointBase):
     id: int
 
 
-# AnimalTypes
+# AnimalTypes -----------------------------------------------------------------
 class AnimalTypeBase(BaseModel):
     type: str
 
@@ -85,3 +88,76 @@ class AnimalTypeBase(BaseModel):
 
 class AnimalType(AnimalTypeBase):
     id: int
+
+
+#Animal -----------------------------------------------------------------------
+class Gender(str, Enum):
+    male = "MALE"
+    female = "FEMALE"
+    OTHER = "OTHER"
+
+
+class AnimalBase(BaseModel):
+    weight: float = Field(gt=0)
+    length: float = Field(gt=0)
+    height: float = Field(gt=0)
+    gender: Gender
+    chipperId: int = Field(gt=0)
+    chippingLocationId: int = Field(gt=0)
+
+
+class AnimalTypes(BaseModel):
+    animalTypes: list[int]
+
+    @validator("animalTypes", pre=True, always=True)
+    def validate_animal_types(cls, animal_types):
+        if not animal_types:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        for type_id in animal_types:
+            if not type_id or type_id <= 0:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        if len(animal_types) != len(set(animal_types)):
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT)
+        return animal_types
+
+
+class AnimalCreation(AnimalBase, AnimalTypes):
+    pass
+
+
+class LifeStatus(str, Enum):
+    ALIVE = "ALIVE"
+    DEAD = "DEAD"
+
+
+class AnimalUpdate(AnimalBase):
+    lifeStatus: LifeStatus
+    deathDateTime: datetime | None
+
+    def __init__(self, **data):
+        if data.get('lifeStatus') == LifeStatus.DEAD:
+            self.deathDateTime = datetime.now(tz=pytz.UTC).replace(microsecond=0)
+        super().__init__(**data)
+
+
+class AnimalSearch(BaseModel):
+    startDateTime: datetime | None
+    endDateTime: datetime | None
+    chipperId: int | None = Field(gt=0)
+    chippingLocationId: int | None = Field(gt=0)
+    lifeStatus: LifeStatus | None
+    gender: Gender | None
+
+
+class AnimalTypeAnimalUpdate(BaseModel):
+    oldTypeId: int = Field(gt=0)
+    newTypeId: int = Field(gt=0)
+
+
+class Animal(AnimalBase, AnimalTypes):
+    id: int
+    lifeStatus: LifeStatus
+    chippingDateTime: datetime
+    visitedLocations: list[int]
+    deathDateTime: datetime | None
+

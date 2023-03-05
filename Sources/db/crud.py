@@ -6,7 +6,7 @@ from db import models
 from models import schemas
 
 
-# Account
+# Account ---------------------------------------------------------------------
 def create_account(
     db: Session, 
     account: schemas.AccountRegistration
@@ -88,7 +88,7 @@ def is_account_linked_with_animals(
     return db.query(exists().where(models.Animal.chipperId==account_id)).scalar()    
 
 
-# LocationPoint
+# LocationPoint ---------------------------------------------------------------
 def get_location_point(
     db: Session,
     point_id: int | Column[Integer]
@@ -165,7 +165,7 @@ def delete_location_point(db: Session, point_id: int | Column[Integer]):
     db.commit()
 
 
-# AnimalTypes
+# AnimalTypes -----------------------------------------------------------------
 def get_animal_type(
     db: Session,
     type_id: int | Column[Integer]
@@ -221,4 +221,140 @@ def is_animal_type_linked_with_animals(db: Session, type_id: int) -> bool:
 
 def delete_animal_type(db: Session, type_id: int | Column[Integer]):
     db.query(models.AnimalType).filter(models.AnimalType.id == type_id).delete()
+    db.commit()
+
+
+# Animal ----------------------------------------------------------------------
+def get_animal(db: Session, animal_id: int | Column[Integer]) -> models.Animal | None:
+    return db.query(models.Animal).filter(models.Animal.id==animal_id).first()
+
+
+def get_animals(
+    db: Session,
+    data: schemas.AnimalSearch,
+    skip: int,
+    size: int
+) -> list[models.Animal] | list[None]:
+    datetime_comprasion = []
+    if data.startDateTime:
+        datetime_comprasion.append(
+            models.Animal.chippingDateTime >= data.startDateTime
+        )
+    if data.endDateTime:
+        datetime_comprasion.append(
+            models.Animal.chippingDateTime <= data.endDateTime
+        )
+    dct = {
+        0: models.Animal.chipperId,
+        1: models.Animal.chippingLocationId,
+        2: models.Animal.lifeStatus,
+        3: models.Animal.gender,
+    }
+    args = (data.chipperId,data.chippingLocationId,data.lifeStatus,data.gender)
+    args_equality = [dct[i] == value for i, value in enumerate(args) if value]
+    return db.query(models.Animal).filter(
+        and_(*datetime_comprasion),  # type: ignore
+        and_(*args_equality)
+    ).order_by(models.Animal.id).offset(skip).limit(size).all()
+
+
+def create_animal(db: Session, animal: schemas.AnimalCreation) -> models.Animal:
+    db_animal = models.Animal(
+        weight = animal.weight,
+        length = animal.length,
+        height = animal.height,
+        gender = animal.gender,
+        chipperId = animal.chipperId,
+        chippingLocationId = animal.chippingLocationId
+    )
+    db.add(db_animal)
+    db.commit()
+    db.refresh(db_animal)
+    for type_id in animal.animalTypes:
+        create_animalType_animal_connection(db, db_animal.id, type_id)
+    return db_animal
+
+
+def create_animalType_animal_connection(
+    db: Session,
+    animal_id: int | Column[int],
+    type_id: int | Column[int]
+):
+    connection = models.AnimalTypeAnimal(
+        id_animal = animal_id,
+        id_animal_type = type_id
+    )
+    db.add(connection)
+    db.commit()
+
+
+def update_animal(db: Session, animal_id: int, data: schemas.AnimalUpdate):
+    db.query(models.Animal).filter(models.Animal.id == animal_id).update(
+        {
+            models.Animal.weight: data.weight,
+            models.Animal.length: data.length,
+            models.Animal.height: data.height,
+            models.Animal.gender: data.gender,
+            models.Animal.lifeStatus: data.lifeStatus,
+            models.Animal.deathDateTime: data.deathDateTime,
+            models.Animal.chipperId: data.chipperId,
+            models.Animal.chippingLocationId: data.chippingLocationId,
+        },
+        synchronize_session=False
+    )
+    db.commit()
+
+
+def delete_animal(db: Session, animal_id: int | Column[int]):
+    db.query(models.Animal).filter(models.Animal.id==animal_id).delete()
+    db.commit()
+
+
+def exists_animal_with_id(db: Session, animal_id: int) -> bool:
+    return db.query(exists().where(models.Animal.id==animal_id)).scalar()
+
+
+def has_animal_type(
+    db: Session,
+    animal_id: int | Column[int],
+    type_id: int | Column[int]
+) -> bool:
+    return db.query(exists().where(
+        models.AnimalTypeAnimal.id_animal == animal_id,
+        models.AnimalTypeAnimal.id_animal_type == type_id
+    )).scalar()
+
+
+def update_animal_type_of_animal(
+    db: Session,
+    animal_id: int | Column[int],
+    data: schemas.AnimalTypeAnimalUpdate
+):
+    db.query(models.AnimalTypeAnimal).filter(
+        models.AnimalTypeAnimal.id_animal == animal_id,
+        models.AnimalTypeAnimal.id_animal_type == data.oldTypeId
+    ).update(
+        {
+            models.AnimalTypeAnimal.id_animal_type: data.newTypeId
+        },
+        synchronize_session=False
+    )
+    db.commit()
+
+
+def get_animal_type_of_animal_len(db: Session, animal_id: int | Column[int]) -> int:
+    return db.query(models.AnimalTypeAnimal).filter(
+        models.AnimalTypeAnimal.id_animal == animal_id
+    ).count()
+
+
+def delete_animal_type_of_animal(
+    db: Session, 
+    animal_id: int | Column[int],
+    type_id: int | Column[int]
+):
+    db.query(models.AnimalTypeAnimal).filter(
+        models.AnimalTypeAnimal.id_animal == animal_id,
+        models.AnimalTypeAnimal.id_animal_type == type_id,
+    ).delete()
     db.commit()
