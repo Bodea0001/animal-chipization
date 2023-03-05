@@ -1,3 +1,4 @@
+import pytz
 from sqlalchemy import (
     Float,
     Column,
@@ -35,11 +36,15 @@ class Animal(Base):
     length = Column(Float, nullable=False)
     height = Column(Float, nullable=False)
     gender = Column(String(6), nullable=False)
-    lifeStatus = Column(String(5), nullable=False)
-    chippingDateTime = Column(DateTime, default=datetime.utcnow(), nullable=False)
+    lifeStatus = Column(String(5), default="ALIVE", nullable=False)
+    chippingDateTime = Column(
+        DateTime(timezone=True),
+        default=datetime.now(tz=pytz.UTC).replace(microsecond=0).isoformat(),
+        nullable=False
+    )
     chipperId = Column(ForeignKey("account.id"), nullable=False)
     chippingLocationId = Column(ForeignKey("location_point.id"), nullable=False)
-    deathDateTime = Column(DateTime)
+    deathDateTime = Column(DateTime(timezone=True))
 
     animalTypes = relationship("AnimalType", secondary="animalType_animal")
     visitedLocations = relationship("AnimalVisitedLocation")
@@ -55,7 +60,11 @@ class AnimalType(Base):
 class AnimalTypeAnimal(Base):
     __tablename__ = "animalType_animal"
 
-    id_animal = Column(ForeignKey("animal.id"), primary_key=True, index=True)
+    id_animal = Column(
+        ForeignKey("animal.id", ondelete="CASCADE"), 
+        primary_key=True,
+        index=True
+    )
     id_animal_type = Column(ForeignKey("animal_type.id"), primary_key=True, index=True)
 
 
@@ -76,8 +85,11 @@ class AnimalVisitedLocation(Base):
         primary_key=True, 
         index=True
     )
-    dateTimeOfVisitLocationPoint = Column(DateTime, default=datetime.utcnow())
-
+    dateTimeOfVisitLocationPoint = Column(
+        DateTime(timezone=True),
+        default=datetime.now(tz=pytz.UTC).replace(microsecond=0),
+        nullable=False
+        )
 
 if __name__ == "__main__":
     Base.metadata.create_all(engine)
