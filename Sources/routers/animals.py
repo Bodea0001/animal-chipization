@@ -81,9 +81,6 @@ async def get_animal_information(
     db: Session = Depends(get_db),
     _: schemas.Account | None = Depends(get_current_account)
 ): 
-    # if animalId <= 0:
-    #     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
-
     animal = get_animal(db, animalId)
     if not animal:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
