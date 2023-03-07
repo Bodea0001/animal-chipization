@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from fastapi import APIRouter, status, HTTPException, Depends, Query
+from fastapi import APIRouter, status, HTTPException, Depends, Query, Path
 
 from models import schemas
 from db.crud import (
@@ -28,14 +28,11 @@ router = APIRouter(prefix="/accounts", tags=["accounts"])
 )
 async def search_accounts(
     search_data: schemas.AccountSearch = Depends(),
-    skip: int = Query(default=0, alias="from"),
-    size: int = 10,
+    skip: int = Query(default=0, alias="from", ge=0),
+    size: int = Query(default=10, gt=0),
     db: Session = Depends(get_db),
     _: schemas.Account | None = Depends(get_current_account)
-):
-    if skip < 0 or size <= 0:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
-    
+): 
     accounts = get_accounts(db, search_data, skip, size)
     if not accounts:
         return []
@@ -50,13 +47,10 @@ async def search_accounts(
     summary="Получение информации об аккаунте пользователя"
 )
 async def get_account_information(
-    accountId: int | None,
+    accountId: int = Path(gt=0),
     db: Session = Depends(get_db),
     _: schemas.Account | None = Depends(get_current_account)
 ):
-    if not accountId or accountId <=0:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
-    
     account = get_user_by_id(db, accountId)
     if not account:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
@@ -70,14 +64,11 @@ async def get_account_information(
     summary="Обновление данных аккаунта пользователя"
 )
 async def update_account_information(
-    accountId: int | None,
     update_data: schemas.AccountUpdate,
+    accountId: int = Path(gt=0),
     db: Session = Depends(get_db),
     auth_user: schemas.Account | None = Depends(get_current_account)
 ):
-    if not accountId or accountId <= 0:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
-    
     if not auth_user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
     
@@ -98,11 +89,11 @@ async def update_account_information(
     summary="Удаление аккаунта пользователя"
 )
 async def delete_account_information(
-    accountId: int | None,
+    accountId: int = Path(gt=0),
     db: Session = Depends(get_db),
     auth_user: schemas.Account | None = Depends(get_current_account)
 ):
-    if not accountId or accountId <= 0 or is_account_linked_with_animals(db, accountId):
+    if is_account_linked_with_animals(db, accountId):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
     
     if not auth_user:

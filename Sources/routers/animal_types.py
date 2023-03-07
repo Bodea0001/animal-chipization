@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Path
 
 from models import schemas
 from db.crud import (
@@ -47,13 +47,10 @@ async def add_animal_type(
     summary="Получение информации о типе животного"
 )
 async def get_type(
-    typeId: int | None,
+    typeId: int = Path(gt=0),
     db: Session = Depends(get_db),
     _: schemas.Account | None = Depends(get_current_account)
 ):
-    if not typeId or typeId <=0:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
-    
     animal_type = get_animal_type(db, typeId)
     if not animal_type:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
@@ -67,14 +64,11 @@ async def get_type(
     summary="Изменение типа животного"
 )
 async def update_type(
-    typeId: int | None,
     animal_type: schemas.AnimalTypeBase,
+    typeId: int = Path(gt=0),
     db: Session = Depends(get_db),
     auth_user: schemas.Account | None = Depends(get_current_account)
 ):
-    if not typeId or typeId <=0:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
-    
     if not auth_user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
     
@@ -94,11 +88,11 @@ async def update_type(
     summary="Удаление типа животного"
 )
 async def delete_type(
-    typeId: int | None,
+    typeId: int = Path(gt=0),
     db: Session = Depends(get_db),
     auth_user: schemas.Account | None = Depends(get_current_account)
 ):
-    if not typeId or typeId <=0 or is_animal_type_linked_with_animals(db, typeId):
+    if is_animal_type_linked_with_animals(db, typeId):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
     
     if not auth_user:

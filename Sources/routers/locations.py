@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Path
 
 from models import schemas
 from db.crud import (
@@ -47,13 +47,10 @@ async def add_location_point(
     summary="Получение информации о точке локации животных"
 )
 async def get_location(
-    pointId: int | None,
+    pointId: int = Path(gt=0),
     db: Session = Depends(get_db),
     _: schemas.Account | None = Depends(get_current_account)
 ):
-    if not pointId or pointId <=0:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
-    
     location_point = get_location_point(db, pointId)
     if not location_point:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
@@ -67,14 +64,11 @@ async def get_location(
     summary="Изменение точки локации животных"
 )
 async def update_location(
-    pointId: int | None,
     location_point: schemas.LocationPointBase,
+    pointId: int = Path(gt=0),
     db: Session = Depends(get_db),
     auth_user: schemas.Account | None = Depends(get_current_account)
 ):
-    if not pointId or pointId <=0:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
-    
     if not auth_user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
     
@@ -94,11 +88,11 @@ async def update_location(
     summary="Удаление точки локации животных"
 )
 async def delete_location(
-    pointId: int | None,
+    pointId: int = Path(gt=0),
     db: Session = Depends(get_db),
     auth_user: schemas.Account | None = Depends(get_current_account)
 ):
-    if not pointId or pointId <=0 or is_location_point_linked_with_animals(db, pointId):
+    if is_location_point_linked_with_animals(db, pointId):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
     
     if not auth_user:

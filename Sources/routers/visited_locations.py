@@ -15,7 +15,7 @@ from db.crud import (
 from controllers.db import get_db
 from controllers.user import get_current_account
 from controllers.check import is_point_as_prev_or_next
-from controllers.validation import validate_animal, validate_visited_location
+from controllers.validation import validate_visited_location
 
 
 router = APIRouter(
