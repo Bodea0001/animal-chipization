@@ -18,13 +18,11 @@ services:
   webapi:
     container_name: webapi
     build: .
-    command: bash -c "ls && python3.11 db/models.py && uvicorn main:app --host 0.0.0.0 --port 8080 --reload"
+    command: bash -c "python3.11 db/models.py && uvicorn main:app --reload --host 0.0.0.0 --port 8080"
     ports:
       - "8080:8080"
     depends_on:
       - database
-    volumes:
-      - .:/app
     restart: always
     environment:
       - POSTGRESQL_CONFIG=postgresql+psycopg2://user:password@database/animal-chipization
