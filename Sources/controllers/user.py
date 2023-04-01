@@ -12,8 +12,8 @@ from controllers.password import verify_password
 from controllers.validation import validate_account
 
 
-def check_role(user: schemas.Account, allowed_roles: list[schemas.Role]):
-    if user.role not in allowed_roles:
+def check_role(user_role: schemas.Role, allowed_roles: list[schemas.Role]):
+    if user_role not in allowed_roles:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
     
 
