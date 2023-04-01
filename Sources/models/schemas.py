@@ -7,6 +7,13 @@ from fastapi import HTTPException, status
 from controllers.mail import is_email_valid
 
 
+#Role -------------------------------------------------------------------------
+class Role(str, Enum):
+    USER = "USER"
+    CHECKER = "CHECKER"
+    ADMIN = "ADMIN"
+        
+
 # Account ---------------------------------------------------------------------
 class AccountBase(BaseModel):
     firstName: str
@@ -15,7 +22,6 @@ class AccountBase(BaseModel):
 
     class Config:
         orm_mode = True
-
 
 
 class AccountRegistration(AccountBase):
@@ -41,6 +47,7 @@ class AccountUpdate(AccountRegistration):
 
 class AccountOut(AccountBase):
     id: int
+    role: Role
 
 
 class AccountSearch(AccountBase):
