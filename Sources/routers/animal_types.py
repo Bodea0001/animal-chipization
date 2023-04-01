@@ -12,8 +12,8 @@ from db.crud import (
     is_animal_type_linked_with_animals,
 )
 from controllers.db import get_db
-from controllers.user import get_current_account
 from controllers.validation import validate_animal_type
+from controllers.user import get_current_account, check_role
 
 
 router = APIRouter(prefix="/animals/types", tags=["animal type"])
@@ -28,11 +28,10 @@ router = APIRouter(prefix="/animals/types", tags=["animal type"])
 async def add_animal_type(
     animal_type: schemas.AnimalTypeBase,
     db: Session = Depends(get_db),
-    auth_user: schemas.Account | None = Depends(get_current_account)
+    auth_user: schemas.Account  = Depends(get_current_account)
 ):
-    if not auth_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
-    
+    check_role(auth_user.role, [schemas.Role.ADMIN, schemas.Role.CHIPPER])
+
     if exists_animal_type_with_type(db, animal_type):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT)
     
@@ -49,7 +48,7 @@ async def add_animal_type(
 async def get_type(
     typeId: int = Path(gt=0),
     db: Session = Depends(get_db),
-    _: schemas.Account | None = Depends(get_current_account)
+    _: schemas.Account = Depends(get_current_account)
 ):
     animal_type = get_animal_type(db, typeId)
     if not animal_type:
@@ -67,11 +66,10 @@ async def update_type(
     animal_type: schemas.AnimalTypeBase,
     typeId: int = Path(gt=0),
     db: Session = Depends(get_db),
-    auth_user: schemas.Account | None = Depends(get_current_account)
+    auth_user: schemas.Account = Depends(get_current_account)
 ):
-    if not auth_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
-    
+    check_role(auth_user.role, [schemas.Role.ADMIN, schemas.Role.CHIPPER])
+
     if not exists_animal_type_with_id(db, typeId):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     
@@ -90,13 +88,12 @@ async def update_type(
 async def delete_type(
     typeId: int = Path(gt=0),
     db: Session = Depends(get_db),
-    auth_user: schemas.Account | None = Depends(get_current_account)
+    auth_user: schemas.Account = Depends(get_current_account)
 ):
+    check_role(auth_user.role, [schemas.Role.ADMIN])
+
     if is_animal_type_linked_with_animals(db, typeId):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
-    
-    if not auth_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
     
     if not exists_animal_type_with_id(db, typeId):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
