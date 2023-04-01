@@ -7,13 +7,15 @@ from db.crud import (
     create_location_point,
     update_location_point,
     delete_location_point,
+    is_point_used_as_visited,
+    is_point_used_as_chipping,
     exists_location_point_with_id,
     is_location_point_linked_with_animals,
     exists_location_point_with_latitude_and_longitude,
 )
 from controllers.db import get_db
-from controllers.user import get_current_account
 from controllers.validation import validate_location_point
+from controllers.user import get_current_account, check_role
 
 
 router = APIRouter(prefix="/locations", tags=["locations"])
@@ -28,11 +30,10 @@ router = APIRouter(prefix="/locations", tags=["locations"])
 async def add_location_point(
     location_point: schemas.LocationPointBase,
     db: Session = Depends(get_db),
-    auth_user: schemas.Account | None = Depends(get_current_account)
+    auth_user: schemas.Account = Depends(get_current_account)
 ):
-    if not auth_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
-    
+    check_role(auth_user.role, [schemas.Role.ADMIN, schemas.Role.CHIPPER])
+
     if exists_location_point_with_latitude_and_longitude(db, location_point):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT)
     
@@ -49,7 +50,7 @@ async def add_location_point(
 async def get_location(
     pointId: int = Path(gt=0),
     db: Session = Depends(get_db),
-    _: schemas.Account | None = Depends(get_current_account)
+    _: schemas.Account = Depends(get_current_account)
 ):
     location_point = get_location_point(db, pointId)
     if not location_point:
@@ -67,13 +68,15 @@ async def update_location(
     location_point: schemas.LocationPointBase,
     pointId: int = Path(gt=0),
     db: Session = Depends(get_db),
-    auth_user: schemas.Account | None = Depends(get_current_account)
+    auth_user: schemas.Account = Depends(get_current_account)
 ):
-    if not auth_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
-    
+    check_role(auth_user.role, [schemas.Role.ADMIN, schemas.Role.CHIPPER])
+
     if not exists_location_point_with_id(db, pointId):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    
+    if is_point_used_as_chipping(db, pointId) or is_point_used_as_visited(db, pointId):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
     
     if exists_location_point_with_latitude_and_longitude(db, location_point):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT)
@@ -90,8 +93,10 @@ async def update_location(
 async def delete_location(
     pointId: int = Path(gt=0),
     db: Session = Depends(get_db),
-    auth_user: schemas.Account | None = Depends(get_current_account)
+    auth_user: schemas.Account = Depends(get_current_account)
 ):
+    check_role(auth_user.role, [schemas.Role.ADMIN])
+
     if is_location_point_linked_with_animals(db, pointId):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
     

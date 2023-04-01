@@ -130,6 +130,17 @@ def exists_location_point_with_id(db: Session, point_id: int) -> bool:
     return db.query(exists().where(models.LocationPoint.id == point_id)).scalar()
 
 
+def is_point_used_as_chipping(db: Session, point_id: int) -> bool:
+    return db.query(
+        exists().where(models.Animal.chippingLocationId == point_id)).scalar()
+
+
+def is_point_used_as_visited(db: Session, point_id: int) -> bool:
+    return db.query(
+        exists().where(models.AnimalVisitedLocation.locationPointId == point_id)
+    ).scalar()
+
+
 def create_location_point(
     db: Session,
     location_point: schemas.LocationPointBase
