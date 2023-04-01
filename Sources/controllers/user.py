@@ -19,10 +19,8 @@ def check_role(user: schemas.Account, allowed_roles: list[schemas.Role]):
 
 async def get_current_account(
     db: Session = Depends(get_db),
-    credentials: HTTPBasicCredentials | None = Depends(security),
-) -> schemas.Account | None:
-    if not credentials:
-        return None
+    credentials: HTTPBasicCredentials = Depends(security),
+) -> schemas.Account :
     user = get_user(db, credentials.username)
     if not user or not verify_password(credentials.password, user.password):  # type: ignore
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)

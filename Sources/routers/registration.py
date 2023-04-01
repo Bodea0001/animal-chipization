@@ -7,7 +7,7 @@ from db.crud import create_account, exists_account_with_email
 from controllers.db import get_db
 from controllers.password import get_password_hash
 from controllers.validation import validate_account
-from controllers.auth import security
+from controllers.auth import security_without_auto_error
 
 
 router = APIRouter()
@@ -23,7 +23,7 @@ router = APIRouter()
 async def process_registration(
     account: schemas.AccountRegistration,
     db: Session = Depends(get_db),
-    credentials: HTTPBasicCredentials | None = Depends(security),
+    credentials: HTTPBasicCredentials | None = Depends(security_without_auto_error),
 ):
     if credentials:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
