@@ -23,6 +23,23 @@ def create_account(
     return db_account
 
 
+def create_account_with_role(
+    db: Session, 
+    account: schemas.AccountAdding
+) -> models.Account:
+    db_account = models.Account(
+        firstName = account.firstName,
+        lastName = account.lastName,
+        email=account.email,
+        password=account.password,
+        role=account.role
+    )
+    db.add(db_account)
+    db.commit()
+    db.refresh(db_account)
+    return db_account
+
+
 def exists_account_with_email(db: Session, email: str | EmailStr) -> bool:
     return db.query(exists().where(models.Account.email==email)).scalar()
 
@@ -66,7 +83,8 @@ def update_account(
             models.Account.firstName: user_data.firstName,
             models.Account.lastName: user_data.lastName,
             models.Account.email: user_data.email,
-            models.Account.password: user_data.password
+            models.Account.password: user_data.password,
+            models.Account.role: user_data.role
         },
         synchronize_session=False
     )

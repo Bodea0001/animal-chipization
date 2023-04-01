@@ -10,7 +10,7 @@ from controllers.mail import is_email_valid
 #Role -------------------------------------------------------------------------
 class Role(str, Enum):
     USER = "USER"
-    CHECKER = "CHECKER"
+    CHIPPER = "CHIPPER"
     ADMIN = "ADMIN"
         
 
@@ -41,8 +41,12 @@ class AccountRegistration(AccountBase):
         return email
 
 
+class AccountAdding(AccountRegistration):
+    role: Role
+
+
 class AccountUpdate(AccountRegistration):
-    pass
+    role: Role
 
 
 class AccountOut(AccountBase):
