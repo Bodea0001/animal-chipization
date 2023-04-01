@@ -8,7 +8,8 @@ def validate_account(account: models.Account) -> schemas.Account:
         firstName=account.firstName,  # type: ignore
         lastName=account.lastName,  # type: ignore
         email=account.email,  # type: ignore
-        password=account.password  # type: ignore
+        password=account.password,  # type: ignore
+        role=account.role  # type: ignore
     )
 
 
