@@ -3,7 +3,7 @@ version: '3.9'
 services:
   # Сервис для разворачивания контейнера с базой данных
   database:
-    image: postgres:15.2
+    image: postgres:latest
     restart: always
     volumes:
       - /var/lib/postgresql/data/
@@ -18,7 +18,7 @@ services:
   webapi:
     container_name: webapi
     build: .
-    command: bash -c "python3.11 db/models.py && uvicorn main:app --reload --host 0.0.0.0 --port 8080"
+    command: bash -c "python3.11 db/models.py && python3.11 prestart.py && uvicorn main:app --reload --host 0.0.0.0 --port 8080"
     ports:
       - "8080:8080"
     depends_on:
@@ -30,7 +30,7 @@ services:
 
   # Сервис для разворачивания контейнера с автотестами
   tests:
-    image: mrexpen/planet_olymp_phase1
+    image: mrexpen/planet_olymp_phase2
     pull_policy: always
     ports:
       - "8090:8080"
