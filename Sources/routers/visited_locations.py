@@ -13,8 +13,8 @@ from db.crud import (
     create_animal_visited_location,
 )
 from controllers.db import get_db
-from controllers.user import get_current_account
 from controllers.check import is_point_as_prev_or_next
+from controllers.user import get_current_account, check_role
 from controllers.validation import validate_visited_location
 
 
@@ -57,9 +57,8 @@ async def add_location_point(
     db: Session = Depends(get_db),
     auth_user: schemas.Account = Depends(get_current_account)
 ):
-    if not auth_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
-    
+    check_role(auth_user.role, [schemas.Role.ADMIN, schemas.Role.CHIPPER])
+  
     if not exists_location_point_with_id(db, pointId):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     
@@ -89,9 +88,8 @@ async def change_visited_location(
     db: Session = Depends(get_db),
     auth_user: schemas.Account = Depends(get_current_account)
 ):
-    if not auth_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
-    
+    check_role(auth_user.role, [schemas.Role.ADMIN, schemas.Role.CHIPPER])
+
     if not exists_location_point_with_id(db, change_data.locationPointId):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     
@@ -129,9 +127,8 @@ async def delete_animal_visited_location(
     db: Session = Depends(get_db),
     auth_user: schemas.Account = Depends(get_current_account)
 ):
-    if not auth_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
-    
+    check_role(auth_user.role, [schemas.Role.ADMIN])
+
     visited_location = get_visited_location(db, visitedPointId)
     if not visited_location or visited_location.id_animal != animalId:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
