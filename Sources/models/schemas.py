@@ -3,7 +3,6 @@ from enum import Enum
 from datetime import datetime
 from pydantic import BaseModel, validator, Field
 from fastapi import HTTPException, status
-
 from controllers.mail import is_email_valid
 
 
@@ -188,4 +187,49 @@ class AnimalVisitedLocationOut(BaseModel):
 class AnimalVisitedLocationChange(BaseModel):
     visitedLocationPointId: int = Field(gt=0)
     locationPointId: int = Field(gt=0)
+
+
+# Area ------------------------------------------------------------------------
+class Point(BaseModel):
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
+
+    class Config:
+        orm_mode = True
+
+    def __hash__(self):
+        return hash((self.latitude, self.longitude))
+
+
+class AreaBase(BaseModel):
+    name: str
+    areaPoints: list[Point]
+
+    class Config:
+        orm_mode = True
+
+    @validator("name", pre=True, always=True)
+    def validate_name(cls, name):
+        if not name or not name.strip():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        return name
     
+    @validator("areaPoints", pre=True, always=True)
+    def validate_area_points(cls, area_points):
+        points = tuple(Point(**point) for point in area_points)
+        if len(points) < 3 or len(points) != len(set(points)):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        return area_points
+
+
+class AreaCreate(AreaBase):
+    pass
+
+
+class AreaUpdate(AreaBase):
+    pass
+
+
+class AreaOut(AreaBase):
+    id: int
+

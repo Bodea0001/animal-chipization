@@ -93,5 +93,23 @@ class AnimalVisitedLocation(Base):
         )
 
 
+class Area(Base):
+    __tablename__ = "area"
+
+    id = Column(BigInteger, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+
+    areaPoints = relationship("AreaPoints", order_by="AreaPoints.id")
+
+
+class AreaPoints(Base):
+    __tablename__ = "area_points"
+
+    id = Column(BigInteger, primary_key=True, index=True)
+    id_area = Column(ForeignKey("area.id", ondelete="CASCADE"))
+    latitude = Column(Double, nullable=False)
+    longitude = Column(Double, nullable=False)
+
+
 if __name__ == "__main__":
     Base.metadata.create_all(engine)
