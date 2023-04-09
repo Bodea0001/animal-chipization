@@ -454,3 +454,67 @@ def delete_visited_location(db: Session, loc_id: int | Column[int]):
         models.AnimalVisitedLocation.id == loc_id
     ).delete()
     db.commit()
+
+
+# Area ------------------------------------------------------------------------
+def get_area(db: Session, id: int | Column[int]) -> models.Area | None:
+    return db.query(models.Area).filter(models.Area.id == id).first()
+
+
+def get_all_areas(db: Session) -> list[models.Area] | None:
+    return db.query(models.Area).all()
+
+
+def get_area_by_name(db: Session, name: str) -> models.Area | None:
+    return db.query(models.Area).filter(models.Area.name == name).first()
+
+
+def exists_area_with_name(db: Session, name: str) -> bool:
+    return db.query(exists().where(models.Area.name == name)).scalar()
+
+
+def exists_area_with_id(db: Session, id: int) -> bool:
+    return db.query(exists().where(models.Area.id == id)).scalar()
+
+
+def create_area(db: Session, data: schemas.AreaCreate) -> models.Area:
+    area = models.Area(name = data.name)
+    db.add(area)
+    db.commit()
+    db.refresh(area)
+    for point in data.areaPoints:
+        _create_area_point(db, area.id, point)
+    return area
+
+
+def _create_area_point(db: Session, area_id: int | Column[int], point: schemas.Point):
+    area_point = models.AreaPoints(
+        id_area = area_id,
+        latitude = point.latitude,
+        longitude = point.longitude
+    )
+    db.add(area_point)
+    db.commit()
+
+
+def update_area(db: Session, id: int | Column[int], data: schemas.AreaUpdate):
+    db.query(models.Area).filter(models.Area.id == id).update(
+        {models.Area.name: data.name,},
+        synchronize_session=False
+    )
+    db.commit()
+
+    _delete_area_points(db, id)
+    for point in data.areaPoints:
+        _create_area_point(db, id, point)
+
+
+def _delete_area_points(db: Session, area_id: int | Column[int]):
+    db.query(models.AreaPoints).filter(models.AreaPoints.id_area == area_id).delete()
+    db.commit()
+
+
+def delete_area(db: Session, id: int | Column[int]):
+    db.query(models.Area).filter(models.Area.id == id).delete()
+    db.commit()
+    

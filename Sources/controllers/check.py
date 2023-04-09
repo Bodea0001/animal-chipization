@@ -1,5 +1,7 @@
 from db import models
 from models import schemas
+from fastapi import HTTPException, status
+from shapely.geometry import Polygon, LineString
 
 
 def is_point_as_prev_or_next(
@@ -34,3 +36,19 @@ def _get_prev_and_next_index(index: int, length: int) -> tuple[int | None, int |
         return index - 1, None
     else:
         return index - 1, index + 1
+
+
+def check_border_intersect_in_polygon(polygon: Polygon):
+    boundary = LineString(polygon.exterior.coords)
+
+    segments = [LineString([boundary.coords[i], boundary.coords[i+1]])
+                for i in range(len(boundary.coords)-1)]
+
+    for i in range(len(segments)):
+        for j in range(i+1, len(segments)):
+            if i == 0 and j == len(segments)-1:
+                continue
+            if segments[i].coords[-1] == segments[j].coords[0]:
+                continue
+            if segments[i].intersects(segments[j]):
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
