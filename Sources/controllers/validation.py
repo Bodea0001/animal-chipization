@@ -71,3 +71,11 @@ def validate_visited_location(
         dateTimeOfVisitLocationPoint=visited_location.dateTimeOfVisitLocationPoint,  # type: ignore
         locationPointId=visited_location.locationPointId  # type: ignore
     )
+
+def validate_area_out(area: models.Area) -> schemas.AreaOut:
+    return schemas.AreaOut(
+        id=area.id,  # type: ignore
+        name=area.name,  # type: ignore
+        areaPoints=[{'latitude':point.latitude, 'longitude':point.longitude}
+                    for point in area.areaPoints]  # type: ignore
+    )
