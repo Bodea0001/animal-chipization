@@ -92,12 +92,14 @@ class AnimalVisitedLocation(Base):
         nullable=False
         )
 
+    location_point = relationship("LocationPoint")
+
 
 class Area(Base):
     __tablename__ = "area"
 
     id = Column(BigInteger, primary_key=True, index=True)
-    name = Column(String, nullable=False)
+    name = Column(String, unique=True, nullable=False)
 
     areaPoints = relationship("AreaPoints", order_by="AreaPoints.id")
 
