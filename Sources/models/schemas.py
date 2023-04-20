@@ -1,6 +1,6 @@
 import pytz
 from enum import Enum
-from datetime import datetime
+from datetime import datetime, date
 from pydantic import BaseModel, validator, Field
 from fastapi import HTTPException, status
 from controllers.mail import is_email_valid
@@ -233,3 +233,39 @@ class AreaUpdate(AreaBase):
 class AreaOut(AreaBase):
     id: int
 
+
+class AreaAnalyticsInterval(BaseModel):
+    startDate: date
+    endDate: date
+
+    def __init__(self, **data):
+        if data["startDate"] >= data["endDate"]:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        super().__init__(**data)
+
+
+class TypeAnalytics(BaseModel):
+    animalType: str
+    animalTypeId: int
+    quantityAnimals: int = Field(default=0)
+    animalsArrived: int = Field(default=0)
+    animalsGone: int = Field(default=0)
+
+    class Config:
+        orm_mode = True
+    
+
+class AreaAnalytics(BaseModel):
+    totalQuantityAnimals: int
+    totalAnimalsArrived: int
+    totalAnimalsGone: int
+    animalsAnalytics: list[TypeAnalytics]
+
+    class Config:
+        orm_mode = True
+
+
+class AnalyticsGroup(str, Enum):
+    QUANTITY = "QUANTITY"
+    ARRIVED = "ARRIVED"
+    GONE = "GONE"

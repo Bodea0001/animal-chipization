@@ -1,6 +1,7 @@
 from pydantic import EmailStr
 from sqlalchemy.orm import Session
-from sqlalchemy import Column, Integer, exists, and_
+from sqlalchemy import Column, Integer, exists, and_, or_, not_, cast, Date, func
+from datetime import date
 
 from db import models
 from models import schemas
@@ -113,6 +114,16 @@ def get_location_point(
 ) -> models.LocationPoint | None:
     return db.query(models.LocationPoint).filter(
         models.LocationPoint.id==point_id
+    ).first()
+
+
+def get_location_point_by_coords(
+    db: Session,
+    coords: schemas.LocationPointBase
+) -> models.LocationPoint | None:
+    return db.query(models.LocationPoint).filter(
+        models.LocationPoint.latitude == coords.latitude,
+        models.LocationPoint.longitude == coords.longitude
     ).first()
 
 
@@ -517,4 +528,66 @@ def _delete_area_points(db: Session, area_id: int | Column[int]):
 def delete_area(db: Session, id: int | Column[int]):
     db.query(models.Area).filter(models.Area.id == id).delete()
     db.commit()
-    
+
+
+# Area's analytics ------------------------------------------------------------
+def get_last_visited_locations(
+    db: Session, date: date) -> list[models.AnimalVisitedLocation] | None:
+    subq = db.query(
+        models.AnimalVisitedLocation.id_animal.label("id_animal"), 
+        func.max(models.AnimalVisitedLocation.dateTimeOfVisitLocationPoint).label("max_date")
+    ).filter(
+        cast(models.AnimalVisitedLocation.dateTimeOfVisitLocationPoint, Date) < date
+    ).group_by(models.AnimalVisitedLocation.id_animal).subquery()
+
+    return db.query(models.AnimalVisitedLocation).join(
+        subq, 
+        and_(models.AnimalVisitedLocation.id_animal == subq.c.id_animal, 
+        models.AnimalVisitedLocation.dateTimeOfVisitLocationPoint == subq.c.max_date)
+    ).all()
+
+
+def get_visited_locations_per_interval(
+    db: Session, 
+    start_date: date,
+    end_date: date
+) -> list[models.AnimalVisitedLocation] | None:
+    return db.query(models.AnimalVisitedLocation).filter(
+        and_(
+            cast(models.AnimalVisitedLocation.dateTimeOfVisitLocationPoint, Date) >= start_date,
+            cast(models.AnimalVisitedLocation.dateTimeOfVisitLocationPoint, Date) <= end_date,
+            )
+    ).order_by(models.AnimalVisitedLocation.dateTimeOfVisitLocationPoint).all()
+
+
+def get_animals_without_vis_locs_and_with_chip_loc_before_date(
+    db: Session,
+    date: date,
+) -> list[models.Animal] | list[None]:
+    subq = db.query(models.AnimalVisitedLocation).filter(
+        cast(models.AnimalVisitedLocation.dateTimeOfVisitLocationPoint, Date) < date
+    ).subquery()
+
+    return db.query(models.Animal).outerjoin(subq).filter(
+        models.AnimalVisitedLocation.id_animal == None,
+        cast(models.Animal.chippingDateTime, Date) < date 
+    ).all()
+
+
+def get_animals_with_chip_loc_per_interval(
+    db: Session,
+    start_date: date,
+    end_date: date,
+) -> list[models.Animal] | list[None]:
+    return db.query(models.Animal).filter(
+        cast(models.Animal.chippingDateTime, Date) >= start_date, 
+        cast(models.Animal.chippingDateTime, Date) <= end_date 
+    ).all()
+
+
+def get_animal_types(db: Session, animal_id: int | Column[int]) -> list[models.AnimalType]:
+    subq = db.query(models.AnimalTypeAnimal).filter(
+        models.AnimalTypeAnimal.id_animal == animal_id
+    ).subquery()
+
+    return db.query(models.AnimalType).join(subq).all()
