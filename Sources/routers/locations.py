@@ -1,5 +1,8 @@
+import base64
+import pygeohash as pgh
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, HTTPException, status, Depends, Path
+from fastapi.responses import PlainTextResponse
 
 from models import schemas
 from db.crud import (
@@ -9,6 +12,7 @@ from db.crud import (
     delete_location_point,
     is_point_used_as_visited,
     is_point_used_as_chipping,
+    get_location_point_by_coords,
     exists_location_point_with_id,
     is_location_point_linked_with_animals,
     exists_location_point_with_latitude_and_longitude,
@@ -39,6 +43,67 @@ async def add_location_point(
     
     db_location_point = create_location_point(db, location_point)
     return validate_location_point(db_location_point)
+
+
+@router.get(path="", status_code=status.HTTP_200_OK)
+async def get_location_by_coords(
+    coords: schemas.LocationPointBase = Depends(),
+    db: Session = Depends(get_db),
+    _: schemas.Account = Depends(get_current_account)
+):
+    location_point = get_location_point_by_coords(db, coords)
+    if not location_point:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return location_point.id
+
+
+@router.get(
+    path="/geohash",
+    status_code=status.HTTP_200_OK,
+    response_class=PlainTextResponse
+)
+async def get_location_hash(
+    coords: schemas.LocationPointBase = Depends(),
+    db: Session = Depends(get_db),
+    _: schemas.Account = Depends(get_current_account)
+):
+    location_point = get_location_point_by_coords(db, coords)
+    if not location_point:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return pgh.encode(coords.latitude, coords.longitude)
+
+
+@router.get(
+    path="/geohashv2",
+    status_code=status.HTTP_200_OK,
+    response_class=PlainTextResponse
+)
+async def get_location_hash_v2(
+    coords: schemas.LocationPointBase = Depends(),
+    db: Session = Depends(get_db),
+    _: schemas.Account = Depends(get_current_account)
+):
+    location_point = get_location_point_by_coords(db, coords)
+    if not location_point:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    geohash = pgh.encode(coords.latitude, coords.longitude)
+    return base64.b64encode(geohash.encode()).decode()
+
+
+@router.get(
+    path="/geohashv3",
+    status_code=status.HTTP_200_OK,
+    response_class=PlainTextResponse
+)
+async def get_location_hash_v3(
+    coords: schemas.LocationPointBase = Depends(),
+    db: Session = Depends(get_db),
+    _: schemas.Account = Depends(get_current_account)
+):
+    location_point = get_location_point_by_coords(db, coords)
+    if not location_point:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return pgh.encode(coords.latitude, coords.longitude)
 
 
 @router.get(
